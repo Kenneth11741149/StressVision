@@ -18,7 +18,7 @@ cap.set(4,frameHeight)
 rubiks_colors = [
             [95,75,51,125,255,255], #Blue
             [26,104,33,96,255,69], #Green
-            [0,107,95,4,255,164], #Red
+            [0,107,95,8,255,164], #Red
             [0,156,143,37,255,172], #Orange
             [62,0,103,119,255,148], #White
             [10,114,108,82,255,217] #Yellow
@@ -61,9 +61,11 @@ def preprocess(image):
     imgGray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) #returns a gray image
     imgBlur = cv2.GaussianBlur(imgGray, (7,7), 1) #returns a blurred image
     imgCanny = cv2.Canny(imgBlur, 50, 50)
-    kernel = np.ones((5, 5))
-    imgDial = cv2.dilate(imgCanny, kernel, iterations=2)
-    imgThres = cv2.erode(imgDial, kernel, iterations=1)
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
+    # kernel = np.ones((5, 5))
+    imgDial = cv2.dilate(imgCanny, kernel, iterations=3)
+    imgThres = cv2.erode(imgDial, kernel, iterations=0)
     return imgThres
 
 def getContour(img): #An image of contours aka the canny edge detection image.
@@ -87,15 +89,19 @@ def getContour(img): #An image of contours aka the canny edge detection image.
 
 def findColor(img):
     imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
+    stackImages2 = []
     for color in rubiks_colors:
         lower = np.array(color[0:3])
         upper = np.array(color[3:6])
         mask = cv2.inRange(imgHSV,lower,upper)
+        lmaoimage = cv2.bitwise_and(img,img,mask=mask)
+        stackImages2.append(mask)
         kernel = np.ones((5, 5))
         imgDial = cv2.dilate(mask, kernel, iterations=2)
         imgThres = cv2.erode(mask, kernel, iterations=1)
         getContour(imgThres)
+    stackedlify = stackImages(0.6,(stackImages2,stackImages2))
+    cv2.imshow("Stack",stackedlify)
     # return newPoints
 
 
@@ -104,6 +110,7 @@ while True:
     imgContour = img.copy()
 
     imgCanny = preprocess(img)
+    cv2.imshow("Cannyed",imgCanny)
     # imgContourDrawn = getContour(imgCanny)
     findColor(img)
 
